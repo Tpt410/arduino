@@ -1,0 +1,68 @@
+#include <LiquidCrystal_PCF8574.h>
+#include <Wire.h>
+
+#define GREEN_LED_PIN 3
+#define RED_LED_PIN 4
+#define PUMP_PIN 7
+#define SENSOR_PIN A0
+
+int moisture = 0;
+int moisturePin = 0;
+char MoistureStr[16];
+
+
+// set the LCD address to 0x27
+LiquidCrystal_PCF8574 lcd(0x27); 
+
+
+void printLCD(const char* data)
+{
+  lcd.clear();  //clean screen
+  delay(1000);
+
+  lcd.setCursor(0, 0);
+  lcd.print(data);
+  
+} // printLCD()
+
+
+void setup() {
+  lcd.begin(16,2);
+  lcd.setBacklight(255);
+  lcd.clear();  //clean screen
+  lcd.setCursor(0, 0); // Row 1
+  lcd.print("Moisture Sensor");
+  lcd.setCursor(0, 1); // Row 2
+  lcd.print("By Potter Tsai");
+  delay(5000);
+
+  pinMode(GREEN_LED_PIN, OUTPUT);
+  pinMode(RED_LED_PIN, OUTPUT);
+  pinMode(PUMP_PIN, OUTPUT);
+
+  Serial.begin(9600);
+}
+
+void loop() {
+  moisturePin = analogRead(SENSOR_PIN); // 讀取濕度的數值
+  moisture = ( 100 - ((moisturePin / 1023.00) * 100 )); //把讀到的數值換算成百分比
+
+  Serial.println(moisture);
+
+  snprintf(MoistureStr, 16, "%d", moisture);
+  printLCD(MoistureStr);
+
+  if (moisture < 40) { // 如果低於某個百分比，就讓馬達運作。
+    digitalWrite(RED_LED_PIN, HIGH); // 紅色LED點亮
+    digitalWrite(GREEN_LED_PIN, LOW); // 綠色LED關閉
+    digitalWrite(PUMP_PIN, HIGH); //啟動馬達
+    delay(2000);      // 抽水的時間。
+  }
+  else {
+    digitalWrite(RED_LED_PIN, LOW); // 紅色LED關閉
+    digitalWrite(GREEN_LED_PIN, HIGH); // 綠色LED點亮
+    digitalWrite(PUMP_PIN, LOW);  // 關閉馬達
+    delay(5000);      // 下次偵測濕度前，停留多久。
+  }
+
+}
